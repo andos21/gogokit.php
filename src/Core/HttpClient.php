@@ -3,6 +3,7 @@
 namespace Viagogo\Core;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 
 /**
@@ -28,11 +29,15 @@ class HttpClient {
 	 * @var Client The Guzzle client
 	 */
 	protected $guzzleClient;
+
+    protected ViagogoConfiguration $defaultConfiguration;
+
 	/**
 	 * @param Client|null The Guzzle client
 	 */
-	public function __construct($guzzleClient) {
+	public function __construct($guzzleClient, ViagogoConfiguration $defaultConfiguration) {
 		$this->guzzleClient = $guzzleClient;
+        $this->defaultConfiguration = $defaultConfiguration;
 	}
 
 	/**
@@ -74,27 +79,37 @@ class HttpClient {
 	 *
 	 * @throws \Viagogo\Exceptions\ViagogoException
 	 */
-	public function send($url, $method = 'GET', $queryParameters = array(), $bodyParameters) {
-		$options = array();
-		if ($bodyParameters) {
-			$options['body'] = $bodyParameters;
+	public function send($url, $method = 'GET', $queryParameters = array(), $bodyParameters = []) {
+		$options = [
+            'headers' => [
+                'Content-Type' => 'application/json'
+            ],
+            'auth' => [
+                $this->defaultConfiguration->clientId,
+                $this->defaultConfiguration->clientSecret
+            ]
+        ];
+
+        foreach ($this->requestHeaders as $key => $value) {
+            $options['headers'][$key] = $value;
+        }
+
+        if ($bodyParameters) {
+			$options['form_params'] = $bodyParameters;
 		}
 
 		if ($queryParameters) {
 			$options['query'] = $queryParameters;
 		}
 
-		$request = $this->guzzleClient->createRequest($method, $url, $options);
-		$request->setHeader('Content-Type', 'application/json');
-
-		foreach ($this->requestHeaders as $k => $v) {
-			$request->setHeader($k, $v);
-		}
+//		$request = $this->guzzleClient->request($method, $url, $options);
+//		$request->setHeader('Content-Type', 'application/json');
 
 		try
 		{
-			$response = $this->guzzleClient->send($request);
-		} catch (RequestException $e) {
+//			$response = $this->guzzleClient->send($request);
+            $response = $this->guzzleClient->request($method, $url, $options);
+		} catch (GuzzleException $e) {
 			throw ErrorHandler::handleError($e);
 		}
 
@@ -104,7 +119,7 @@ class HttpClient {
 		return json_decode($response->getBody());
 	}
 
-	public function getBytes($url, $queryParameters = array(), $bodyParameters) {
+	public function getBytes($url, $queryParameters = array(), $bodyParameters = []) {
 		$options = array();
 		if ($bodyParameters) {
 			$options['body'] = $bodyParameters;

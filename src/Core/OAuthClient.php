@@ -3,7 +3,6 @@
 namespace Viagogo\Core;
 
 use GuzzleHttp\Client;
-use Viagogo\Core\ViagogoConfiguration;
 
 /**
  *
@@ -12,12 +11,13 @@ class OAuthClient {
 	private $url;
 	private $httpClient;
 	private static $tokenUrl = 'https://account.viagogo.com/oauth2/token';
+    private ViagogoConfiguration $configuration;
 
 	function __construct(ViagogoConfiguration $configuration) {
-		if ($configuration) 
-		{
+		if ($configuration) {
+            $this->configuration = $configuration;
 			$this->url = $configuration->tokenUrl ?: OAuthClient::$tokenUrl;
-			$this->httpClient = new HttpClient(new Client(['defaults' => ['auth' => [$configuration->clientId, $configuration->clientSecret]]]));
+			$this->httpClient = new HttpClient(new Client(), $configuration);
 		}
 	}
 

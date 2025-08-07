@@ -23,7 +23,7 @@ class HalClient {
 	function __construct(ViagogoConfiguration $configuration, OAuthTokenStore $tokenStore) {
 		$this->tokenStore = $tokenStore;
 		$this->url = $configuration ? $configuration->rootUrl : HalClient::$rootUrl;
-		$this->httpClient = new HttpClient(new Client());
+		$this->httpClient = new HttpClient(new Client(), $configuration);
 
 		if ($configuration && $configuration->currency) {
 			$this->httpClient->setRequestHeader('Accept-Currency', $configuration->currency);
